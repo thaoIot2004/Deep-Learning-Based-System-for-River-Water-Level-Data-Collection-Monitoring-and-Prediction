@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard Mực Nước</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet"/>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Roboto',sans-serif}
+    body{background:#f4f6f8;color:#333;height:100vh;overflow:auto}
+    .dashboard{display:grid;grid-template-columns:250px 1fr;height:100vh;min-height:720px;}
+    .sidebar{background:#2C3E50;color:#ecf0f1;padding:20px;display:flex;flex-direction:column;align-items:center;}
+    .avatar{width:80px;height:80px;border-radius:50%;background:#27b7ff;display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:10px;color:#fff;}
+    .brand-name{font-size:1.2rem;font-weight:700}
+    .menu{margin-top:30px;width:100%}
+    .menu a{display:flex;align-items:center;padding:12px;color:#ecf0f1;border-radius:6px;margin-bottom:8px;text-decoration:none}
+    .menu a i{width:24px;margin-right:10px;text-align:center}
+    .menu a:hover{background:rgba(236,240,241,0.08)}
+    .main-content{display:flex;flex-direction:column;padding:20px;gap:20px;height:100%}
+    .header{display:flex;justify-content:space-between;align-items:center}
+    .header h1{font-size:1.5rem}
+    .header .current-time{font-size:0.95rem;color:#555;background:transparent;padding:6px 10px;border-radius:6px;border:1px solid rgba(0,0,0,0.06);}
+    .cards-wrapper{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;background:#fff;padding:15px;border:1px solid #ddd;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);flex:0 0 auto;}
+    .card{background:#fff;padding:20px;border-radius:8px;border:1px solid #ccc;text-align:center}
+    .card h3{font-size:1rem;color:#555;margin-bottom:8px}
+    .card .value{font-size:2rem;color:#007bff;font-weight:700}
+    .card1{border-left:4px solid #3498DB}
+    .card2{border-left:4px solid #F39C12}
+    .card3{border-left:4px solid #3498DB}
+    .card4{border-left:4px solid #F39C12}
+    .charts-grid{display:grid;grid-template-columns:2.5fr 1fr;grid-template-rows:52% 48%;gap:20px;height:calc(100vh - 250px);align-items:stretch;}
+    .chartBar{grid-column:1;grid-row:1}
+    .chartLine{grid-column:1;grid-row:2}
+    .box{background:#fff;border-radius:8px;padding:20px;box-shadow:0 2px 6px rgba(0,0,0,0.06);display:flex;flex-direction:column;overflow:hidden}
+    .box h3{font-size:1.1rem;color:#444;margin-bottom:12px}
+    .chartBar .box,.chartLine .box{height:100%;min-height:120px}
+    .chartBar canvas,.chartLine canvas{width:100%!important;height:calc(100% - 40px)!important;display:block;}
+    .right-container{grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;gap:20px;align-items:stretch;height:100%;}
+    .donut-box{background:#fff;border-radius:8px;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;height:150px;min-height:120px;}
+    .donut-box h3{margin-bottom:8px}
+    .donut-box canvas{width:100%!important;height:100%!important}
+    .calendar-box{background:#fff;border-radius:8px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,0.06);display:flex;flex-direction:column;overflow:hidden;flex:1 1 auto;min-height:360px;}
+    #datetimePicker{flex:1;overflow:auto}
+    .flatpickr-calendar.inline{position:static!important;width:100%!important;max-height:100%!important;overflow:auto;}
+    .hour-selector{margin-top:10px;display:flex;align-items:center}
+    .hour-selector input{flex:1;margin:0 10px}
+    @media(max-width:900px){
+      .charts-grid{grid-template-columns:1fr;grid-template-rows:auto auto auto;height:auto}
+      .right-container{grid-column:1;grid-row:auto}
+      .donut-box,.calendar-box{height:auto;min-height:120px}
+      .chartBar .box,.chartLine .box{min-height:180px}
+      .header{flex-direction:column;align-items:flex-start;gap:8px}
+      .header .current-time{align-self:flex-end}
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <aside class="sidebar">
+      <div class="avatar"><i class="fa fa-tint"></i></div>
+      <div class="brand-name">TMN</div>
+      <nav class="menu">
+        <a href="#"><i class="fa fa-tint"></i> Mực nước</a>
+        <a href="index2.html"><i class="fa fa-mountain"></i> Độ cao đất</a>
+      </nav>
+    </aside>
+
+    <div class="main-content">
+      <div class="header">
+        <h1>Dashboard Mực Nước</h1>
+        <div id="current-time" class="current-time">--:--:--</div>
+      </div>
+
+      <div class="cards-wrapper">
+        <div class="card card1">
+          <h3>Mực nước hiện tại</h3>
+          <div class="value" id="current-level">--</div>
+        </div>
+        <div class="card card2">
+          <h3>Dự đoán 1h tới</h3>
+          <div class="value" id="forecast-level">--</div>
+        </div>
+        <div class="card card3">
+          <h3>Mực nước trung bình</h3>
+          <div class="value" id="avg-level">--</div>
+        </div>
+        <div class="card card4">
+          <h3>Tăng/Giảm (%)</h3>
+          <div class="value" id="delta-percent">--</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chartBar">
+          <div class="box">
+            <h3>Biểu đồ cột - Mực nước</h3>
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+
+        <div class="right-container">
+          <div class="donut-box">
+            <h3>% Thay đổi mực nước</h3>
+            <canvas id="donutChart"></canvas>
+          </div>
+          <div class="calendar-box">
+            <div id="datetimePicker"></div>
+            <div class="hour-selector">
+              <label for="hour-range">Giờ:</label>
+              <input type="range" id="hour-range" min="0" max="23" value="0"/>
+              <span id="hour-label">00:00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chartLine">
+          <div class="box">
+            <h3>Biểu đồ đường - Thực tế &amp; Dự báo</h3>
+            <canvas id="lineChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <script>
+    let sheetData = { actual:[], forecast:[] }, lineChart = null, barChart = null, donutChart = null;
+    // MAIN_CSV = sheet1 (history + forecast) -> unchanged
+    const MAIN_CSV = 'https://docs.google.com/spreadsheets/d/1x4rokcl_kx6N8INXb-izgOyGJAJuwMtS3Fle1FlgEQw/export?format=csv&gid=0';
+    // CURRENT sheet URL (we only derive sheetId from it and use gid=1 for sheet2)
+    const CURRENT_CSV = 'https://docs.google.com/spreadsheets/d/1omVE5uZMVKv9Si3E_VQ-R2Lfi6iGnENk2LhbZo54Ef4/export?format=csv&gid=0';
+    const sheetIdMatch = CURRENT_CSV.match(/\/d\/([a-zA-Z0-9-_]+)\//);
+    const CURRENT_SHEET_ID = sheetIdMatch ? sheetIdMatch[1] : null;
+    const CURRENT_GID = 1; // sheet 2 (where current readings come from)
+
+    // latest reading from sheet2 (kept separate, does NOT mutate sheetData.actual)
+    let latestFromSheet2 = null;
+
+    let calendarRef = null;
+
+    Chart.register({
+      id: 'doughnutCenter',
+      beforeDraw(chart){
+        if(chart.config.type==='doughnut'){
+          const {ctx,width,height} = chart;
+          ctx.save();
+          const percentRaw = (chart.config.data && chart.config.data.datasets && chart.config.data.datasets[0] && chart.config.data.datasets[0].data && chart.config.data.datasets[0].data[0]) ? chart.config.data.datasets[0].data[0] : 0;
+          const percent = Math.round(percentRaw * 10) / 10;
+          const text = (percent).toFixed(1) + '%';
+          const fontSize = (Math.min(width,height)/6).toFixed(2);
+          ctx.font = fontSize + 'px sans-serif';
+          ctx.fillStyle = '#333';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text,width/2,height/2);
+          ctx.restore();
+        }
+      }
+    });
+
+    function computeYMax(actualArr){
+      // accept actualArr copy for accurate max (fallback to sheetData if not provided)
+      const ys = (actualArr || sheetData.actual).map(p=>p.y).concat(sheetData.forecast.map(p=>p.y));
+      const maxData = ys.length ? Math.max(...ys) : 200;
+      return Math.max(300, Math.ceil((maxData + 30)/50)*50);
+    }
+
+    // utility: return a copy of sheetData.actual limited to [start,end], but
+    // with override from latestFromSheet2 applied (without mutating sheetData)
+    function getActualCopyWithOverride(start, end){
+      // make deep-ish copy of points (Date objects preserved)
+      const arr = sheetData.actual.map(p => ({ x: new Date(p.x), y: p.y }));
+
+      // filter by range if provided
+      let filtered = arr;
+      if(start || end){
+        filtered = arr.filter(p => ( !start || p.x >= start ) && ( !end || p.x <= end ));
+      }
+
+      if(latestFromSheet2 && latestFromSheet2.t){
+        // compare by minute
+        const tOverride = new Date(latestFromSheet2.t);
+        tOverride.setSeconds(0,0);
+        // find exact minute match
+        let idx = filtered.findIndex(pt => {
+          const d = new Date(pt.x); d.setSeconds(0,0);
+          return d.getTime() === tOverride.getTime();
+        });
+        if(idx !== -1){
+          filtered[idx].y = latestFromSheet2.v;
+        } else {
+          // not found exact minute -> find last point <= override time and override it
+          // this ensures charts show current reading
+          const leIdx = filtered.map(p=>p.x.getTime()).reduce((acc, t, i) => {
+            if(t <= tOverride.getTime()) return i; // returns last index satisfying condition
+            return acc;
+          }, -1);
+          if(leIdx !== -1){
+            filtered[leIdx].y = latestFromSheet2.v;
+          } else {
+            // if no point <= override time, optionally override the first point in the window
+            // but we skip if filtered empty
+            if(filtered.length > 0){
+              filtered[0].y = latestFromSheet2.v;
+            }
+          }
+        }
+      }
+
+      return filtered;
+    }
+
+    function updateLineChart(date){
+      const now = new Date();
+      const start = new Date(date.getTime() - 5*3600000);
+      const end   = new Date(date.getTime() + 3*3600000);
+
+      // use copy with override for plotting
+      const actCopy = getActualCopyWithOverride(start, end);
+      const forw = sheetData.forecast.filter(p=>p.x>=start && p.x<=end);
+
+      const actualDs = {
+        label:'Thực tế',
+        data: actCopy.map(p=>({x:p.x, y:p.y})),
+        borderColor: '#2b9af6',
+        tension: 0.35,
+        pointRadius: 3,
+        borderWidth: 2.6,
+        fill: true,
+        backgroundColor: function(context){
+          const chart = context.chart;
+          const {ctx, chartArea} = chart;
+          if(!chartArea) return 'rgba(43,154,246,0.36)';
+          const grd = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          grd.addColorStop(0, 'rgba(43,154,246,0.36)');
+          grd.addColorStop(1, 'rgba(43,154,246,0.02)');
+          return grd;
+        },
+        yAxisID: 'y'
+      };
+
+      const forecastDs = {
+        label:'Dự báo',
+        data: forw,
+        borderColor:'#f59f1f',
+        borderDash:[8,6],
+        tension:0.35,
+        pointRadius:3,
+        borderWidth:2,
+        fill:false,
+        yAxisID:'y'
+      };
+
+      if(lineChart) lineChart.destroy();
+
+      lineChart = new Chart('lineChart', {
+        type:'line',
+        data: { datasets: [actualDs, forecastDs] },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ position:'bottom' }, tooltip:{ mode:'nearest', intersect:false, callbacks:{ label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` } } },
+          interaction:{ mode:'nearest', axis:'x', intersect:false },
+          scales:{
+            x:{
+              type:'time',
+              time:{ unit:'hour', tooltipFormat:'HH:mm', displayFormats:{hour:'HH:mm'}},
+              min:start,
+              max:end,
+              grid:{
+                display:true,
+                drawBorder:false,
+                color:'rgba(224,224,224,0.7)',
+                borderDash:[2,6],
+                tickLength:0,
+                drawOnChartArea:true
+              },
+              ticks:{ autoSkip:true, maxTicksLimit:11 }
+            },
+            y:{
+              min:0,
+              max: computeYMax(actCopy),
+              ticks:{ stepSize:50 },
+              grid:{ color:'#e0e0e0' },
+              title:{ display:true, text:'Mực nước (m)' }
+            }
+          },
+          animation:{ duration:250 }
+        }
+      });
+    }
+
+    function createBarChart(){
+      const now = new Date();
+      const tenHoursAgo = new Date(now.getTime() - 10*3600000);
+
+      // use copy with override
+      const barPts = getActualCopyWithOverride(tenHoursAgo, now).map(p=>({t:p.x, v:p.y}));
+
+      const labels = barPts.map(pt=>pt.t.getHours().toString().padStart(2,'0')+':00');
+      const data = barPts.map(pt=>pt.v);
+
+      if(barChart) barChart.destroy();
+
+      const ctx = document.getElementById('barChart').getContext('2d');
+      barChart = new Chart(ctx, {
+        type:'bar',
+        data:{
+          labels: labels,
+          datasets:[{
+            label:'Mực nước',
+            data: data,
+            backgroundColor: '#4dabf7',
+            barThickness: 6,
+            borderRadius: 4
+          }]
+        },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` } } },
+          scales:{
+            x:{
+              grid:{
+                display:true,
+                drawBorder:false,
+                color:'rgba(224,224,224,0.7)',
+                borderDash:[2,6],
+                tickLength:0,
+                drawOnChartArea:true
+              },
+              ticks:{ autoSkip:true, maxRotation:0 }
+            },
+            y:{
+              min:0,
+              max: computeYMax(getActualCopyWithOverride(tenHoursAgo, now)),
+              ticks:{ stepSize:50 },
+              grid:{ color:'#e0e0e0' }
+            }
+          },
+          animation:{ duration:250 }
+        }
+      });
+    }
+
+    function computeSevenDayAvgDiv168_full24(referenceDate){
+      let totalSum = 0;
+      for(let d=1; d<=7; d++){
+        const day = new Date(referenceDate);
+        day.setDate(referenceDate.getDate() - d);
+        sheetData.actual.forEach(pt=>{
+          const px = pt.x;
+          if(px.getFullYear() === day.getFullYear() &&
+             px.getMonth() === day.getMonth() &&
+             px.getDate() === day.getDate()){
+            totalSum += pt.y;
+          }
+        });
+      }
+      const avg = totalSum / 168;
+      return { avg: isFinite(avg) ? avg : null, sum: totalSum };
+    }
+
+    function updateAvgAndDeltaForDate(date){
+      const result = computeSevenDayAvgDiv168_full24(date);
+      const avgElem = document.getElementById('avg-level');
+      if(result.avg === null){
+        avgElem.textContent = '--';
+      } else {
+        avgElem.textContent = Number(result.avg.toFixed(2));
+      }
+
+      // For delta and donut, use the *displayed current point* (from sheet2 if available),
+      // otherwise use last point from sheetData.actual
+      let displayedCurrent = null;
+      if(latestFromSheet2 && latestFromSheet2.v !== undefined){
+        displayedCurrent = latestFromSheet2.v;
+      } else {
+        const now = new Date();
+        const actualUpToNow = sheetData.actual.filter(pt=>pt.x<=now);
+        const currentPoint = actualUpToNow.length ? actualUpToNow[actualUpToNow.length-1] : null;
+        if(currentPoint) displayedCurrent = currentPoint.y;
+      }
+
+      const deltaElem = document.getElementById('delta-percent');
+
+      if(displayedCurrent !== null && result.avg && result.avg !== 0){
+        const p = ((displayedCurrent - result.avg) / result.avg) * 100;
+        const pRounded = Math.round(p * 10) / 10; // 1 chữ số thập phân
+
+        const pct = Math.min(200, Math.abs(pRounded));
+        const pctRounded = Math.round(pct * 10) / 10;
+
+        deltaElem.textContent = (pRounded > 0 ? '+' + pRounded.toFixed(1) : pRounded.toFixed(1)) + '%';
+
+        if(donutChart) donutChart.destroy();
+        donutChart = new Chart('donutChart',{ 
+          type:'doughnut',
+          data:{ labels:['',''], datasets:[{ data:[pctRounded, 200 - pctRounded], backgroundColor:['#ffd43b','#e9ecef'], borderRadius:8, borderWidth:8 }] },
+          options:{ responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{ legend:{ display:false } } }
+        });
+      } else {
+        deltaElem.textContent = '--';
+        if(donutChart) donutChart.destroy();
+        donutChart = new Chart('donutChart',{
+          type:'doughnut',
+          data:{ labels:['',''], datasets:[{ data:[0, 200], backgroundColor:['#ffd43b','#e9ecef'], borderRadius:8, borderWidth:8 }] },
+          options:{ responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{ legend:{ display:false } } }
+        });
+      }
+    }
+
+    // fetch MAIN CSV once at init (history + forecast) - unchanged (sheet1)
+    async function fetchMainCSV(){
+      try{
+        const sep = MAIN_CSV.includes('?') ? '&' : '?';
+        const url = MAIN_CSV + sep + '_=' + Date.now();
+        const resp = await fetch(url, { cache: 'no-store', credentials: 'omit' });
+        const text = await resp.text();
+        if(/<!doctype html>/i.test(text) || /<html/i.test(text)){
+          console.error('fetchMainCSV: nhận được HTML thay vì CSV — kiểm tra quyền chia sẻ MAIN_CSV');
+          return;
+        }
+        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+        if(!parsed || !parsed.data) return;
+        sheetData.actual = [];
+        sheetData.forecast = [];
+        parsed.data.forEach(x=>{
+          const tField = x['Thời gian'] ?? x['Thoi gian'] ?? x['time'] ?? x['Time'];
+          const t = tField ? new Date(tField) : null;
+          if(t && !isNaN(t.getTime())){
+            const vRaw = x['Mực nước'] ?? x['Muc nuoc'] ?? x['muc nuoc'] ?? x['value'];
+            const v = vRaw === undefined || vRaw === null || vRaw === '' ? NaN : Number(String(vRaw).replace(',','.'));
+            if(!isNaN(v)) sheetData.actual.push({x:t,y:v});
+            const v2Raw = x['Mực nước dự đoán'] ?? x['Muc nuoc du doan'] ?? x['forecast'];
+            const v2 = v2Raw === undefined || v2Raw === null || v2Raw === '' ? NaN : Number(String(v2Raw).replace(',','.'));
+            if(!isNaN(v2)){
+              const t2 = new Date(t.getTime() + 3600000);
+              sheetData.forecast.push({x:t2,y:v2});
+            }
+          }
+        });
+        sheetData.actual.sort((a,b)=>a.x-b.x);
+        sheetData.forecast.sort((a,b)=>a.x-b.x);
+      } catch(e){
+        console.error('fetchMainCSV error', e);
+      }
+    }
+
+    // fetch current from sheet 2 (GViz). Only update latestFromSheet2 and #current-level.
+    // Do NOT mutate sheetData.actual.
+    async function fetchCurrentGVizAndUpdate(){
+      if(!CURRENT_SHEET_ID){
+        console.warn('Không tìm thấy CURRENT_SHEET_ID, sẽ dùng phương pháp CSV cũ.');
+        return fetchCurrentCSVAndUpdate();
+      }
+
+      try {
+        // fetch several recent rows so we can pick the row matching current minute or previous minute
+        const limit = 10;
+        const tq = encodeURIComponent('select * order by A desc limit ' + limit);
+        const url = `https://docs.google.com/spreadsheets/d/${CURRENT_SHEET_ID}/gviz/tq?gid=${CURRENT_GID}&tqx=out:json&tq=${tq}&_=${Date.now()}`;
+        const resp = await fetch(url, { cache: 'no-store', credentials: 'omit' });
+        const text = await resp.text();
+        if(!text) return;
+        const jsonText = text.replace(/^[^\(]*\(/, '').replace(/\);?\s*$/,'');
+        const obj = JSON.parse(jsonText);
+        const rows = obj.table && obj.table.rows ? obj.table.rows : [];
+        if(!rows.length) return;
+
+        const points = [];
+        rows.forEach(row=>{
+          const cells = row.c || [];
+          let t = null;
+          let v = NaN;
+
+          if(cells[0] && cells[0].v !== null && cells[0].v !== undefined){
+            const raw = cells[0].v;
+            if(typeof raw === 'string' && /^Date\(/.test(raw)){
+              const args = raw.match(/Date\((.*)\)/)[1].split(',').map(s=>Number(s.trim()));
+              t = new Date(args[0], args[1], args[2] || 1, args[3]||0, args[4]||0, args[5]||0);
+            } else if(typeof raw === 'object' && (raw.hasOwnProperty('v') || raw.hasOwnProperty('f'))){
+              t = new Date(raw.v || raw.f);
+            } else if(typeof raw === 'number'){
+              t = new Date(raw);
+            } else {
+              t = new Date(raw);
+            }
+          }
+
+          if(cells[1] && cells[1].v !== null && cells[1].v !== undefined){
+            v = Number(String(cells[1].v).replace(',','.'));
+          } else if(cells[1] && cells[1].f){
+            v = Number(String(cells[1].f).replace(/[^0-9,.-]/g,'').replace(',','.'));
+          }
+
+          if(t && !isNaN(t.getTime()) && !isNaN(v)) points.push({t,v});
+        });
+
+        if(points.length === 0) return;
+
+        const now = new Date();
+        const nowMinute = new Date(now); nowMinute.setSeconds(0,0);
+        const prevMinute = new Date(nowMinute.getTime() - 60000);
+
+        let chosen = points.find(p => { const d = new Date(p.t); d.setSeconds(0,0); return d.getTime() === nowMinute.getTime(); });
+        if(!chosen){
+          chosen = points.find(p => { const d = new Date(p.t); d.setSeconds(0,0); return d.getTime() === prevMinute.getTime(); });
+        }
+        if(!chosen){
+          const le = points.find(p => new Date(p.t).getTime() <= nowMinute.getTime());
+          chosen = le || points[0];
+        }
+
+        const latest = { t: new Date(chosen.t), v: chosen.v };
+        // update display and store separate variable - DO NOT mutate sheetData.actual
+        latestFromSheet2 = latest;
+        document.getElementById('current-level').textContent = latest.v;
+
+        // redraw charts using copy-with-override
+        try {
+          createBarChart();
+          const selDate = (calendarRef && calendarRef.selectedDates && calendarRef.selectedDates[0]) ? new Date(calendarRef.selectedDates[0]) : new Date();
+          const hr = Number(document.getElementById('hour-range')?.value) || selDate.getHours();
+          selDate.setHours(hr,0,0,0);
+          updateLineChart(selDate);
+          updateAvgAndDeltaForDate(selDate);
+        } catch(e){
+          console.warn('Error updating charts after current fetch', e);
+        }
+
+      } catch (err) {
+        console.error('fetchCurrentGVizAndUpdate error', err);
+      }
+    }
+
+    // fallback CSV polling (if GViz not available). Same behavior: update latestFromSheet2 only.
+    async function fetchCurrentCSVAndUpdate(){
+      try {
+        const sep = CURRENT_CSV.includes('?') ? '&' : '?';
+        const url = CURRENT_CSV + sep + '_=' + Date.now();
+        const resp = await fetch(url, { cache: 'no-store', credentials: 'omit' });
+        const text = await resp.text();
+        if(/<!doctype html>/i.test(text) || /<html/i.test(text)){
+          console.warn('fetchCurrentCSVAndUpdate: nhận được HTML thay vì CSV — kiểm tra quyền chia sẻ CURRENT_CSV');
+          return;
+        }
+        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+        if(!parsed || !parsed.data) return;
+        let latest = null;
+        parsed.data.forEach(x=>{
+          const tField = x['Thời gian'] ?? x['Thoi gian'] ?? x['time'] ?? x['Time'];
+          const t = tField ? new Date(tField) : null;
+          if(t && !isNaN(t.getTime())){
+            const vRaw = x['Mực nước'] ?? x['Muc nuoc'] ?? x['muc nuoc'] ?? x['value'];
+            const v = vRaw === undefined || vRaw === null || vRaw === '' ? NaN : Number(String(vRaw).replace(',','.'));
+            if(!isNaN(v)){
+              if(!latest || t.getTime() > latest.t.getTime()){
+                latest = { t: t, v: v };
+              }
+            }
+          }
+        });
+
+        if(!latest) return;
+
+        latestFromSheet2 = latest;
+        document.getElementById('current-level').textContent = latest.v;
+
+        try {
+          createBarChart();
+          const selDate = (calendarRef && calendarRef.selectedDates && calendarRef.selectedDates[0]) ? new Date(calendarRef.selectedDates[0]) : new Date();
+          const hr = Number(document.getElementById('hour-range')?.value) || selDate.getHours();
+          selDate.setHours(hr,0,0,0);
+          updateLineChart(selDate);
+          updateAvgAndDeltaForDate(selDate);
+        } catch(e){
+          console.warn('Error updating charts after current fetch (csv fallback)', e);
+        }
+      } catch (err) {
+        console.error('fetchCurrentCSVAndUpdate error', err);
+      }
+    }
+
+    function updateClock(){
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      const ss = String(now.getSeconds()).padStart(2,'0');
+      const dd = String(now.getDate()).padStart(2,'0');
+      const mo = String(now.getMonth() + 1).padStart(2,'0');
+      const yy = now.getFullYear();
+      document.getElementById('current-time').textContent = `${hh}:${mm}:${ss}  ${dd}/${mo}/${yy}`;
+    }
+    function startClock(){ updateClock(); setInterval(updateClock,1000); }
+
+    async function init(){
+      await fetchMainCSV();
+
+      const now = new Date();
+      const actualUpToNow = sheetData.actual.filter(pt=>pt.x<=now);
+      const currentPoint = actualUpToNow.length?actualUpToNow[actualUpToNow.length-1]:null;
+      document.getElementById('current-level').textContent = currentPoint?currentPoint.y:'--';
+
+      // Forecast 1h (from MAIN_CSV)
+      let forecastValue='--';
+      if(currentPoint){
+        const targetMs=currentPoint.x.getTime()+3600000;
+        const matched=sheetData.forecast.find(pt=>Math.abs(pt.x.getTime()-targetMs)<=60000);
+        if(matched) forecastValue=matched.y;
+      }
+      document.getElementById('forecast-level').textContent=forecastValue;
+
+      createBarChart();
+      updateLineChart(new Date());
+
+      if(donutChart) donutChart.destroy();
+      donutChart = new Chart('donutChart',{ 
+        type:'doughnut',
+        data:{ labels:['',''], datasets:[{ data:[0, 200], backgroundColor:['#ffd43b','#e9ecef'], borderRadius:8, borderWidth:8 }] },
+        options:{ responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{ legend:{ display:false } } }
+      });
+
+      calendarRef = flatpickr('#datetimePicker', {
+        inline:true, defaultDate:new Date(),
+        onChange:([d])=>{
+          const curHour = Number(document.getElementById('hour-range').value) || new Date().getHours();
+          document.getElementById('hour-range').value = curHour;
+          document.getElementById('hour-label').textContent = String(curHour).padStart(2,'0') + ':00';
+          if(d){
+            d.setHours(curHour,0,0,0);
+            updateLineChart(d);
+            updateAvgAndDeltaForDate(d);
+          }
+        }
+      });
+
+      const hourSlider = document.getElementById('hour-range');
+      const hourLabel = document.getElementById('hour-label');
+      const nowHour = new Date().getHours();
+      hourSlider.value = nowHour;
+      hourLabel.textContent = String(nowHour).padStart(2,'0') + ':00';
+
+      hourSlider.addEventListener('input', ()=>{
+        const hr = Number(hourSlider.value);
+        hourLabel.textContent = hr.toString().padStart(2,'0') + ':00';
+        const selectedDate = (calendarRef.selectedDates[0] || new Date());
+        selectedDate.setHours(hr,0,0,0);
+        updateLineChart(selectedDate);
+        updateAvgAndDeltaForDate(selectedDate);
+      });
+
+      const defaultDate = calendarRef.selectedDates[0] || new Date();
+      defaultDate.setHours(nowHour,0,0,0);
+      updateLineChart(defaultDate);
+      updateAvgAndDeltaForDate(defaultDate);
+
+      // schedule aligned polling each minute (fetch current from sheet2)
+      const CURRENT_POLL_MS = 60 * 1000; // 1 minute
+      const fetchForMinute = () => fetchCurrentGVizAndUpdate();
+
+      (function scheduleAlignedPoll(){
+        const now = new Date();
+        const msToNextMinute = (60 - now.getSeconds())*1000 - now.getMilliseconds();
+        setTimeout(()=>{
+          fetchForMinute();
+          setInterval(fetchForMinute, CURRENT_POLL_MS);
+        }, Math.max(0, msToNextMinute));
+      })();
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      init();
+      startClock();
+    });
+  </script>
+</body>
+</html>
