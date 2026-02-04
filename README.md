@@ -1,5 +1,6 @@
 
 📋 Project Overview
+
 This project develops a compact, durable IoT device capable of collecting and monitoring river water levels in real-time. The system integrates hardware sensors with deep learning models to provide accurate water level predictions and early warning capabilities.
 Key Features
 
@@ -10,6 +11,7 @@ Web Dashboard: User-friendly interface for monitoring current status and predict
 Early Warning System: Proactive alerts to help users respond to potential flooding events
 
 🛠️ Technologies Used
+
 Hardware & Embedded Systems
 
 Programming Language: C
