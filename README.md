@@ -1,4 +1,4 @@
-Real-Time River Water Level Monitoring and Prediction System
+
 📋 Project Overview
 This project develops a compact, durable IoT device capable of collecting and monitoring river water levels in real-time. The system integrates hardware sensors with deep learning models to provide accurate water level predictions and early warning capabilities.
 Key Features
