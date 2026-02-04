@@ -1,5 +1,5 @@
 Real-Time River Water Level Monitoring and Prediction System
-Project Overview
+📋 Project Overview
 This project develops a compact, durable IoT device capable of collecting and monitoring river water levels in real-time. The system integrates hardware sensors with deep learning models to provide accurate water level predictions and early warning capabilities.
 Key Features
 
@@ -8,22 +8,27 @@ Network Connectivity: Seamless data transmission to central server system
 Deep Learning Prediction: GRU-based model for forecasting future water level trends
 Web Dashboard: User-friendly interface for monitoring current status and predictions
 Early Warning System: Proactive alerts to help users respond to potential flooding events
-Technologies Used
+
+🛠️ Technologies Used
 Hardware & Embedded Systems
 
 Programming Language: C
 Microcontroller: ESP32-Devkit
-Sensors:  HC-Sr04
-Web Development: HTML, CSS, JavaScript, Connect to GoogleSheet
+Sensors: HC-SR04
+
+Web Development
+
+Frontend: HTML, CSS, JavaScript
+Backend: Connect to Google Sheets
+
 Machine Learning
 
 Model Architecture: GRU (Gated Recurrent Unit Networks)
-Framework:  TensorFlow
+Framework: TensorFlow
 
 System Architecture
-<img width="278" height="624" alt="image" src="https://github.com/user-attachments/assets/43040dfb-d641-4ca5-91e8-9f0815efbecf" />
-Results
-Hardware Implementation
+<img width="278" height="624" alt="System Architecture Diagram" src="https://github.com/user-attachments/assets/43040dfb-d641-4ca5-91e8-9f0815efbecf" />
+
 <img width="476" height="706" alt="image" src="https://github.com/user-attachments/assets/c110eb3e-5a12-4e6b-9d84-d21b450d9d97" />
 Figure 1: Deployed water level monitoring device
 Deep Learning Model Performance
