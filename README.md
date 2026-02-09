@@ -27,7 +27,7 @@ Machine Learning
 
 Model Architecture: GRU (Gated Recurrent Unit Networks)
 Framework: TensorFlow
-
+Link Google Sheet: https://docs.google.com/spreadsheets/d/1x4rokcl_kx6N8INXb-izgOyGJAJuwMtS3Fle1FlgEQw/edit?usp=sharing
 System Architecture
 <p align="center"><img width="278" height="624" alt="System Architecture Diagram" src="https://github.com/user-attachments/assets/be828bc8-2d7f-460b-91ff-afa8e2cfac55" /> </p>
  Results
