@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard Mực Nước - Chọn Ngày Giờ Linh Hoạt</title>
+
+  <!-- Fonts & icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+
+  <!-- PapaParse + Chart.js + adapter -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Roboto',sans-serif}
+    html,body{height:100%}
+    body{background:#f4f6f8;color:#222}
+
+    /* layout */
+    .dashboard{display:grid;grid-template-columns:260px 1fr;height:100vh;min-width:1200px;max-width:1920px;margin:0 auto}
+    .sidebar{background:#263445;color:#ecf0f1;padding:22px;display:flex;flex-direction:column;gap:14px;align-items:center}
+    .avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#2eb8ff,#1476d9);color:#fff;font-size:1.6rem;display:flex;align-items:center;justify-content:center}
+    .brand-name{font-size:1.05rem;font-weight:700}
+    .menu{margin-top:6px;width:100%}
+    .menu a{display:flex;align-items:center;padding:10px;color:#ecf0f1;border-radius:8px;margin-bottom:8px;text-decoration:none;gap:10px}
+    .menu a:hover{background:rgba(255,255,255,0.03)}
+    .menu svg{width:18px;height:18px;flex-shrink:0}
+
+    /* main */
+    .main{padding:16px 22px;display:flex;flex-direction:column;gap:12px;height:100%;overflow:hidden}
+    .header{display:flex;align-items:center;justify-content:space-between}
+    .header h1{font-size:1.45rem;color:#111}
+    .small-muted{font-size:0.92rem;color:#6b7280}
+
+    .top-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .card{background:#fff;padding:12px;border-radius:10px;border:1px solid #e6eef8;box-shadow:0 2px 6px rgba(0,0,0,0.04);text-align:center}
+    .card h3{font-size:0.95rem;color:#374151;margin-bottom:8px}
+    .card .value{font-size:1.6rem;color:#0d6efd;font-weight:700}
+
+    .lower{display:grid;grid-template-columns:2fr 1fr;gap:12px;align-items:stretch;flex:1 1 auto;min-height:0}
+    .chart-area{background:#fff;border-radius:10px;padding:12px;border:1px solid #e6eef8;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:10px;min-height:0}
+    #waterChartWrapper{flex:1 1 auto;min-height:420px;max-height:680px;position:relative}
+    canvas{width:100% !important;height:100% !important;display:block}
+
+    .right-panel{display:flex;flex-direction:column;gap:12px;align-items:stretch;height:100%}
+    .status-area{background:#fff;padding:12px;border-radius:10px;border:1px solid #e6eef8;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:10px;min-height:0}
+    .status-row{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    .status-boxes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .status-box{background:linear-gradient(180deg,#fff,#fbfdff);border-radius:10px;padding:12px;border:1px solid #edf2f7;min-height:110px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+    .status-box .box-title{font-weight:700;color:#334155;margin-bottom:6px}
+    .status-box .box-value{font-size:1.6rem;color:#0b70ff;font-weight:800}
+    .small-line{display:flex;justify-content:center;align-items:center;font-size:1rem;color:#475569;padding:6px 8px;border-radius:8px;background:#f8fafc;margin-top:6px}
+
+    .danger-box{background:#fff;padding:12px;border-radius:10px;border:1px solid #e6eef8;min-height:120px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center}
+    .danger-badges{display:flex;flex-direction:column;gap:8px;width:100%}
+    .badge{display:flex;justify-content:space-between;padding:10px 12px;border-radius:8px;color:#fff;font-weight:700}
+
+    /* Date Time Picker Styles */
+    .datetime-picker-row{display:flex;flex-direction:column;gap:8px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
+    .picker-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .picker-group{display:flex;flex-direction:column;gap:4px}
+    .picker-group label{font-size:0.85rem;color:#475569;font-weight:600}
+    .picker-group input, .picker-group select{padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.95rem;background:#fff}
+    .btn-now{padding:8px 16px;background:#2b9af6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:0.9rem}
+    .btn-now:hover{background:#1d7fc9}
+    .selected-time-display{font-weight:700;color:#334155;font-size:1rem;padding:8px 12px;background:#fff;border-radius:6px;border:1px solid #e2e8f0}
+
+    .slider-row{display:flex;flex-direction:column;gap:8px;padding-top:6px}
+    .slider-wrap{display:flex;align-items:center;gap:10px}
+    #time-slider{flex:1}
+    .slider-label{min-width:160px;text-align:center;font-weight:700;color:#334155}
+
+    @media (max-height:1100px){
+      .main{padding:12px 16px}
+      .card{padding:10px}
+      .header h1{font-size:1.25rem}
+      #waterChartWrapper{min-height:360px}
+      .status-box{min-height:96px}
+    }
+
+    /* sidebar extra */
+    .sidebar-info{width:100%;background:rgba(255,255,255,0.03);padding:10px;border-radius:8px;text-align:center}
+    .elevation-value{font-weight:800;font-size:1.05rem;margin-top:6px}
+
+    /* minimal link button look */
+    .link-like{background:transparent;border:0;padding:6px 10px;border-radius:8px;color:inherit;cursor:pointer}
+    .link-like:hover{background:rgba(255,255,255,0.03)}
+
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <aside class="sidebar" role="navigation" aria-label="Sidebar">
+      <div class="avatar" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2s6 6.5 6 10a6 6 0 1 1-12 0c0-3.5 6-10 6-10z" stroke="#fff" stroke-width="1.2" fill="#2eb8ff" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand-name">TMN</div>
+
+      <nav class="menu" aria-label="Main menu">
+        <a href="index1.html" id="nav-muc-nuoc" title="Mở index.html">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2s6 6.5 6 10a6 6 0 1 1-12 0c0-3.5 6-10 6-10z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Mực nước</span>
+        </a>
+
+        <a href="#" id="nav-elevation" title="Độ cao đất (Thông tin thêm)">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2 20h20L12 4 2 20z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/><path d="M9 14l2-3 3 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          <span>Độ cao đất</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-info" aria-live="polite">
+        <div class="small-muted">Độ cao đất (tự động từ CSV)</div>
+        <div class="elevation-value" id="sidebar-elevation">-- / -- / -- m</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header">
+        <h1>Độ cao nước so với đất</h1>        
+      </div>
+
+      <!-- TOP: Độ cao vùng đất 3 box -->
+      <div class="top-cards">
+        <div class="card">
+          <h3>Độ cao vùng đất 1</h3>
+          <div class="value" id="land1Box">--</div>
+        </div>
+        <div class="card">
+          <h3>Độ cao vùng đất 2</h3>
+          <div class="value" id="land2Box">--</div>
+        </div>
+        <div class="card">
+          <h3>Độ cao vùng đất 3</h3>
+          <div class="value" id="land3Box">--</div>
+        </div>
+      </div>
+
+      <div class="lower">
+        <!-- Chart -->
+        <section class="chart-area" aria-label="Biểu đồ mực nước">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">Biểu đồ mực nước (Thực tế &amp; Dự báo)</div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <div style="display:flex;gap:8px;align-items:center"><div style="width:12px;height:12px;background:#2b9af6;border-radius:3px"></div><small>Thực tế</small></div>
+              <div style="display:flex;gap:8px;align-items:center"><div style="width:12px;height:12px;background:#f59f1f;border-radius:3px"></div><small>Dự báo</small></div>
+              <div style="display:flex;gap:8px;align-items:center"><div style="width:12px;height:12px;background:#94a3b8;border-radius:3px"></div><small>Ngưỡng đất</small></div>
+            </div>
+          </div>
+          <div id="waterChartWrapper">
+            <canvas id="waterChart" aria-label="Chart mực nước"></canvas>
+          </div>
+        </section>
+
+        <!-- Right panel -->
+        <aside class="right-panel">
+          <div class="status-area">
+            <!-- Date Time Picker -->
+            <div class="datetime-picker-row">
+              <div style="font-weight:700;color:#334155;margin-bottom:4px">Chọn thời gian xem</div>
+              <div class="picker-controls">
+                <div class="picker-group">
+                  <label for="date-input">Ngày</label>
+                  <input type="date" id="date-input" />
+                </div>
+                <div class="picker-group">
+                  <label for="hour-input">Giờ</label>
+                  <select id="hour-input">
+                    <option value="0">00:00</option>
+                    <option value="1">01:00</option>
+                    <option value="2">02:00</option>
+                    <option value="3">03:00</option>
+                    <option value="4">04:00</option>
+                    <option value="5">05:00</option>
+                    <option value="6">06:00</option>
+                    <option value="7">07:00</option>
+                    <option value="8">08:00</option>
+                    <option value="9">09:00</option>
+                    <option value="10">10:00</option>
+                    <option value="11">11:00</option>
+                    <option value="12">12:00</option>
+                    <option value="13">13:00</option>
+                    <option value="14">14:00</option>
+                    <option value="15">15:00</option>
+                    <option value="16">16:00</option>
+                    <option value="17">17:00</option>
+                    <option value="18">18:00</option>
+                    <option value="19">19:00</option>
+                    <option value="20">20:00</option>
+                    <option value="21">21:00</option>
+                    <option value="22">22:00</option>
+                    <option value="23">23:00</option>
+                  </select>
+                </div>
+                <button class="btn-now" id="btn-set-now">Hiện tại</button>
+              </div>
+              <div class="selected-time-display" id="selected-time-display">Đã chọn: --</div>
+            </div>
+
+            <div class="status-row">
+              <div style="font-weight:700;color:#334155">Tổng quan vùng</div>
+              <div class="small-muted">Tại thời điểm đã chọn</div>
+            </div>
+
+            <div class="status-boxes">
+              <!-- Mực nước hiện tại -->
+              <div class="status-box" id="current-water-box">
+                <div class="box-title">Mực nước hiện tại</div>
+                <div class="box-value" id="current-water-main">--</div>
+                <div class="small-lines" id="current-water-lines"></div>
+              </div>
+
+              <!-- Mực nước tại thời điểm chọn -->
+              <div class="status-box" id="forecast-water-box">
+                <div class="box-title" id="forecast-title">Mực nước đã chọn</div>
+                <div class="box-value" id="forecast-water-main">--</div>
+                <div class="small-lines" id="forecast-water-lines"></div>
+              </div>
+            </div>
+
+            <!-- Danger box -->
+            <div class="danger-box">
+              <div style="font-weight:700;color:#334155">Trạng thái nguy hiểm (3 vùng)</div>
+              <div class="danger-badges" id="danger-badges"></div>
+
+              <!-- slider for offset from selected time -->
+              <div class="slider-row" style="width:100%;padding-top:6px">
+                <div class="slider-wrap">
+                  <div class="slider-label" id="slider-time-label">Lệch: 0 giờ</div>
+                  <input type="range" id="time-slider" min="-7" max="7" step="1" value="0" aria-label="Slider thời gian"/>
+                  <div style="min-width:70px;text-align:center;font-size:0.9rem;color:#475569" id="slider-value-label">+0h</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- error box -->
+  <div id="errorBox" style="display:none;position:fixed;left:50%;top:60%;transform:translate(-50%,-50%);background:#fff;border:1px solid #fecaca;color:#991b1b;padding:14px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.15);z-index:999">
+    <div style="font-weight:700;margin-bottom:6px">Không thể tải dữ liệu</div>
+    <div id="errorMessage" class="small-muted"></div>
+  </div>
+
+  <script>
+    // ---------- Cấu hình ----------
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1x4rokcl_kx6N8INXb-izgOyGJAJuwMtS3Fle1FlgEQw/export?format=csv&gid=0';
+    const DEFAULT_LAND = [240,260,280];
+    const REFRESH_MS = 120000;
+
+    // state
+    const sheetData = { actual: [], forecast: [] };
+    let landHeights = [...DEFAULT_LAND];
+    let chart = null;
+    let selectedDateTime = new Date(); // Current selected date/time
+    selectedDateTime.setMinutes(0,0,0);
+
+    function showError(msg) {
+      console.error(msg);
+      document.getElementById('errorMessage').textContent = String(msg);
+      document.getElementById('errorBox').style.display = 'block';
+    }
+    function hideError() { document.getElementById('errorBox').style.display = 'none'; }
+
+    // --- helper parse functions ---
+    function parseNum(raw){
+      if(raw === undefined || raw === null) return NaN;
+      const s = String(raw).trim().replace(/\./g,'').replace(',', '.');
+      const n = Number(s);
+      return isNaN(n) ? NaN : n;
+    }
+
+    // parse CSV and build sheetData + landHeights
+    function loadSheet(csvUrl) {
+      hideError();
+      sheetData.actual = []; sheetData.forecast = []; const foundLands = [];
+
+      Papa.parse(csvUrl, {
+        download: true, header: true, skipEmptyLines: true,
+        complete: function(res) {
+          if (!res || !res.data || !res.data.length) {
+            showError('CSV rỗng hoặc PapaParse không trả về dữ liệu.');
+            return;
+          }
+
+          res.data.forEach(row => {
+            const timeField = row['Thời gian'] ?? row['Thoi gian'] ?? row['thời gian'] ?? row['time'] ?? row['Time'] ?? row['timestamp'];
+            const t = timeField ? new Date(timeField) : null;
+            if (t && !isNaN(t.getTime())) {
+              const vRaw = row['Mực nước'] ?? row['Muc nuoc'] ?? row['muc nuoc'] ?? row['value'] ?? row['Value'];
+              const v = (vRaw === undefined || vRaw === null || vRaw === '') ? NaN : Number(String(vRaw).replace(',','.'));
+              if (!isNaN(v)) sheetData.actual.push({ x: new Date(t.getTime()), y: v });
+
+              const v2Raw = row['Mực nước dự đoán'] ?? row['Muc nuoc du doan'] ?? row['Mực nước dự báo'] ?? row['forecast'] ?? row['Forecast'];
+              const v2 = (v2Raw === undefined || v2Raw === null || v2Raw === '') ? NaN : Number(String(v2Raw).replace(',','.'));
+              if (!isNaN(v2)) {
+                const t2 = new Date(t.getTime() + 3600000);
+                sheetData.forecast.push({ x: t2, y: v2 });
+              }
+            }
+            const landRaw = row['độ cao đất'] ?? row['do cao dat'] ?? row['độ cao nền'] ?? row['độ cao'] ?? row['height'] ?? row['land'];
+            if (landRaw !== undefined && landRaw !== null && String(landRaw).trim() !== '') {
+              const num = Number(String(landRaw).replace(',','.'));
+              if (!isNaN(num)) foundLands.push(num);
+            }
+          });
+
+          // Process land heights from main sheet only
+          const uniqueL = Array.from(new Set(foundLands));
+          if (uniqueL.length >= 3) landHeights = uniqueL.slice(0,3);
+          else if (uniqueL.length > 0) {
+            const need = 3 - uniqueL.length;
+            landHeights = uniqueL.concat(DEFAULT_LAND.slice(0,need));
+          } else landHeights = [...DEFAULT_LAND];
+
+          document.getElementById('land1Box').textContent = landHeights[0];
+          document.getElementById('land2Box').textContent = landHeights[1];
+          document.getElementById('land3Box').textContent = landHeights[2];
+          document.getElementById('sidebar-elevation').textContent = `${landHeights[0]} / ${landHeights[1]} / ${landHeights[2]} m`;
+
+          sheetData.actual.sort((a,b)=>a.x - b.x);
+          sheetData.forecast.sort((a,b)=>a.x - b.x);
+
+          initOrUpdateChart();
+          updateAllDisplays();
+        },
+        error: function(err) { showError('Lỗi khi tải CSV: ' + (err && err.message ? err.message : JSON.stringify(err))); console.error('PapaParse error:', err); },
+        download: true,
+        dynamicTyping: false
+      });
+    }
+
+    function findPointAt(series, targetTime) {
+      if (!series || !series.length) return null;
+      const tol = 30*60*1000;
+      let best=null, bestDiff=Infinity;
+      for (let p of series) {
+        const d = Math.abs(p.x.getTime() - targetTime.getTime());
+        if (d < bestDiff && d <= tol) { bestDiff = d; best = p; }
+      }
+      return best;
+    }
+
+    function initOrUpdateChart() {
+      const ctx = document.getElementById('waterChart').getContext('2d');
+      const center = new Date(selectedDateTime.getTime());
+      const start = new Date(center.getTime() - 7*3600000);
+      const end = new Date(center.getTime() + 7*3600000);
+
+      const actualFiltered = sheetData.actual.filter(p => p.x <= new Date());
+      const actualDs = {
+        label: 'Mực nước - Thực tế',
+        data: actualFiltered.map(p=>({x:p.x,y:p.y})),
+        yAxisID: 'yLeft', borderColor: '#2b9af6',
+        backgroundColor: function(ctx){ const chart = ctx.chart; const c = chart.ctx; const chartArea = chart.chartArea; if (!chartArea) return 'rgba(43,154,246,0.36)'; const grd = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom); grd.addColorStop(0, 'rgba(43,154,246,0.36)'); grd.addColorStop(1, 'rgba(43,154,246,0.02)'); return grd; },
+        fill:true, tension:0.35, pointRadius:3, borderWidth:2.6
+      };
+
+      const forecastDs = {
+        label: 'Mực nước - Dự báo',
+        data: sheetData.forecast.map(p=>({x:p.x,y:p.y})),
+        yAxisID: 'yLeft', borderColor: '#f59f1f', backgroundColor: 'rgba(245,159,31,0.08)', fill:false, tension:0.35, borderDash:[8,6], pointRadius:3, borderWidth:2
+      };
+
+      const landDatasets = landHeights.map((h, idx) => ({ label: `Đất ${idx+1}`, data:[{x:start,y:h},{x:end,y:h}], yAxisID:'yLeft', borderColor:'#94a3b8', borderWidth:1.2, borderDash:[6,4], pointRadius:0, fill:false }));
+
+      if (chart) chart.destroy();
+
+      const ys = sheetData.actual.map(p=>p.y).concat(sheetData.forecast.map(p=>p.y));
+      const maxData = ys.length ? Math.max(...ys) : 200;
+      const yMax = Math.max(300, Math.ceil((maxData + 30)/50)*50);
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: { datasets: [actualDs, forecastDs, ...landDatasets] },
+        options: {
+          plugins: { legend:{position:'bottom'}, tooltip:{mode:'nearest', intersect:false, callbacks:{ label: ctx=> `${ctx.dataset.label}: ${ctx.parsed.y}` } } },
+          maintainAspectRatio:false, animation:{duration:300}, interaction:{mode:'nearest', axis:'x', intersect:false},
+          scales: {
+            x: { type:'time', time:{unit:'hour', tooltipFormat:'yyyy-MM-dd HH:mm', displayFormats:{hour:'HH:mm'}}, min:start, max:end, ticks:{autoSkip:true, maxTicksLimit:11} },
+            yLeft: { type:'linear', position:'left', min:0, max:yMax, ticks:{stepSize:50}, title:{display:true,text:'Mực nước / Độ cao (m)'} }
+          }
+        }
+      });
+    }
+
+    function updateAllDisplays(){
+      const sliderOffset = parseInt(document.getElementById('time-slider').value, 10);
+      const target = new Date(selectedDateTime.getTime() + sliderOffset*3600000);
+
+      document.getElementById('slider-value-label').textContent = (sliderOffset>=0?`+${sliderOffset}h`:`${sliderOffset}h`);
+      document.getElementById('slider-time-label').textContent = `Lệch: ${sliderOffset>=0?'+':''}${sliderOffset} giờ`;
+      document.getElementById('forecast-title').textContent = `Mực nước tại ${formatHourLabel(target)}`;
+      document.getElementById('selected-time-display').textContent = `Đã chọn: ${formatFullDateTime(selectedDateTime)} (${sliderOffset>=0?'+':''}${sliderOffset}h)`;
+
+      // Current water value from latest actual
+      const latestActual = sheetData.actual.length ? sheetData.actual[sheetData.actual.length - 1] : null;
+      document.getElementById('current-water-main').textContent = latestActual ? latestActual.y : '--';
+
+      // current small-lines
+      const curLinesBox = document.getElementById('current-water-lines'); curLinesBox.innerHTML = '';
+      for (let i=0;i<3;i++){
+        const land = landHeights[i] ?? DEFAULT_LAND[i];
+        const val = latestActual ? latestActual.y : null;
+        const diff = (val !== null && !isNaN(val)) ? (land - val) : null;
+        const div = document.createElement('div'); div.className='small-line';
+        div.textContent = `Chênh lệch vùng ${i+1}: ${ (diff !== null && !isNaN(diff)) ? diff.toFixed(1) : '--' }`;
+        curLinesBox.appendChild(div);
+      }
+
+      // forecast or past point at target
+      const forecastMain = document.getElementById('forecast-water-main'); const forecastLinesBox = document.getElementById('forecast-water-lines'); forecastLinesBox.innerHTML = '';
+      let mainPoint = null;
+      if (target.getTime() > new Date().getTime()) mainPoint = findPointAt(sheetData.forecast, target);
+      else mainPoint = findPointAt(sheetData.actual, target);
+      forecastMain.textContent = mainPoint ? mainPoint.y : '--';
+
+      for (let i=0;i<3;i++){
+        const land = landHeights[i] ?? DEFAULT_LAND[i];
+        const val = mainPoint ? mainPoint.y : null;
+        const diff = (val !== null && !isNaN(val)) ? (land - val) : null;
+        const div = document.createElement('div'); div.className='small-line';
+        div.textContent = `Chênh lệch vùng ${i+1}: ${ (diff !== null && !isNaN(diff)) ? diff.toFixed(1) : '--' }`;
+        forecastLinesBox.appendChild(div);
+      }
+
+      // danger badges
+      const pointForStatus = mainPoint || latestActual || null;
+      const badges = document.getElementById('danger-badges'); badges.innerHTML = '';
+      for (let i=0;i<3;i++){
+        const land = landHeights[i] ?? DEFAULT_LAND[i];
+        const val = pointForStatus ? pointForStatus.y : NaN;
+        let diff = (isFinite(val) ? (land - val) : NaN);
+        let statusText='--', bg='#94a3b8';
+        if (!isNaN(diff)) {
+          if (diff >= 20) { statusText='AN TOÀN'; bg='#16a34a'; }
+          else if (diff >= 10) { statusText='CẢNH BÁO'; bg='#f59e0b'; }
+          else { statusText='NGẬP'; bg='#ef4444'; }
+        }
+        const badge = document.createElement('div'); badge.className='badge'; badge.style.background = bg;
+        badge.innerHTML = `<div class="region">Vùng ${i+1}</div><div class="val">${statusText}</div>`;
+        badges.appendChild(badge);
+      }
+
+      // update chart window
+      if (chart) {
+        const newMin = new Date(target.getTime() - 7*3600000);
+        const newMax = new Date(target.getTime() + 7*3600000);
+        chart.options.scales.x.min = newMin; chart.options.scales.x.max = newMax;
+
+        const onlyActual = sheetData.actual.filter(p => p.x <= new Date());
+        const actualDataset = chart.data.datasets.find(ds => ds.label && ds.label.includes('Thực tế'));
+        const forecastDataset = chart.data.datasets.find(ds => ds.label && ds.label.includes('Dự báo'));
+        if (actualDataset) actualDataset.data = onlyActual.map(p=>({x:p.x,y:p.y}));
+        if (forecastDataset) forecastDataset.data = sheetData.forecast.map(p=>({x:p.x,y:p.y}));
+
+        chart.data.datasets.forEach(ds => {
+          if (ds.label && ds.label.startsWith('Đất')) {
+            const m = ds.label.match(/\d+/);
+            if (m) {
+              const idx = Number(m[0]) - 1; const h = landHeights[idx] ?? DEFAULT_LAND[idx];
+              ds.data = [{x:newMin,y:h},{x:newMax,y:h}];
+            }
+          }
+        });
+
+        chart.update();
+      }
+    }
+
+    function formatHourLabel(d){
+      const hh = d.getHours().toString().padStart(2,'0');
+      const dd = d.getDate().toString().padStart(2,'0');
+      const mm = (d.getMonth()+1).toString().padStart(2,'0');
+      return `${dd}/${mm} ${hh}:00`;
+    }
+
+    function formatFullDateTime(d){
+      const hh = d.getHours().toString().padStart(2,'0');
+      const dd = d.getDate().toString().padStart(2,'0');
+      const mm = (d.getMonth()+1).toString().padStart(2,'0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy} ${hh}:00`;
+    }
+
+    function updateDateTimePicker(){
+      const dateStr = selectedDateTime.toISOString().split('T')[0];
+      document.getElementById('date-input').value = dateStr;
+      document.getElementById('hour-input').value = selectedDateTime.getHours();
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function(){
+      // Initialize date/time picker with current time
+      updateDateTimePicker();
+
+      // Date input change
+      document.getElementById('date-input').addEventListener('change', function(){
+        const dateVal = this.value;
+        if(dateVal){
+          const parts = dateVal.split('-');
+          const year = parseInt(parts[0]);
+          const month = parseInt(parts[1]) - 1;
+          const day = parseInt(parts[2]);
+          const hour = selectedDateTime.getHours();
+          selectedDateTime = new Date(year, month, day, hour, 0, 0, 0);
+          updateAllDisplays();
+        }
+      });
+
+      // Hour input change
+      document.getElementById('hour-input').addEventListener('change', function(){
+        const hour = parseInt(this.value);
+        selectedDateTime.setHours(hour, 0, 0, 0);
+        updateAllDisplays();
+      });
+
+      // "Now" button
+      document.getElementById('btn-set-now').addEventListener('click', function(){
+        selectedDateTime = new Date();
+        selectedDateTime.setMinutes(0,0,0);
+        updateDateTimePicker();
+        document.getElementById('time-slider').value = 0;
+        updateAllDisplays();
+      });
+
+      // Slider for offset
+      document.getElementById('time-slider').addEventListener('input', function(){
+        updateAllDisplays();
+      });
+
+      // Start loading
+      start();
+
+      // Expose for debugging
+      window.__sheetData = sheetData;
+    });
+
+    // start loading and periodic refresh
+    function start(){
+      try{ loadSheet(SHEET_CSV_URL); setInterval(()=>loadSheet(SHEET_CSV_URL), REFRESH_MS); }
+      catch(e){ showError('Lỗi khởi tạo: '+(e && e.message?e.message:e)); console.error(e); }
+    }
+
+    // Sidebar elevation click
+    document.getElementById('nav-elevation').addEventListener('click', function(e){ e.preventDefault(); document.getElementById('waterChartWrapper').scrollIntoView({behavior:'smooth', block:'center'}); });
+
+  </script>
+</body>
+</html>
